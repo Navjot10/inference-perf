@@ -24,6 +24,7 @@ from inference_perf.config import (
     ConversationReplayDistribution,
     DataConfig,
     DataGenType,
+    DistributionType,
 )
 from inference_perf.datagen.conversation_replay_datagen import (
     ConversationReplayDataGenerator,
@@ -229,19 +230,19 @@ class TestDistributionExtensions:
     def test_lognormal_distribution(self) -> None:
         rng = np.random.default_rng(42)
         result = generate_distribution(
-            min=10, max=1000, mean=100, std_dev=50, total_count=1000, dist_type="lognormal", rng=rng
+            min=10, max=1000, mean=100, std_dev=50, total_count=1000, dist_type=DistributionType.Lognormal, rng=rng
         )
         assert len(result) == 1000
         assert all(10 <= v <= 1000 for v in result)
 
     def test_uniform_distribution(self) -> None:
         rng = np.random.default_rng(42)
-        result = generate_distribution(min=10, max=100, mean=55, std_dev=0, total_count=1000, dist_type="uniform", rng=rng)
+        result = generate_distribution(min=10, max=100, mean=55, std_dev=0, total_count=1000, dist_type=DistributionType.Uniform, rng=rng)
         assert len(result) == 1000
         assert all(10 <= v <= 100 for v in result)
 
     def test_fixed_distribution(self) -> None:
-        result = generate_distribution(min=50, max=50, mean=50, std_dev=0, total_count=100, dist_type="fixed")
+        result = generate_distribution(min=50, max=50, mean=50, std_dev=0, total_count=100, dist_type=DistributionType.Fixed)
         assert len(result) == 100
         assert all(v == 50 for v in result)
 
@@ -254,7 +255,7 @@ class TestDistributionExtensions:
 
     def test_seeded_rng_deterministic(self) -> None:
         rng1 = np.random.default_rng(99)
-        result1 = generate_distribution(min=10, max=1000, mean=500, std_dev=100, total_count=50, dist_type="normal", rng=rng1)
+        result1 = generate_distribution(min=10, max=1000, mean=500, std_dev=100, total_count=50, dist_type=DistributionType.Normal, rng=rng1)
         rng2 = np.random.default_rng(99)
-        result2 = generate_distribution(min=10, max=1000, mean=500, std_dev=100, total_count=50, dist_type="normal", rng=rng2)
+        result2 = generate_distribution(min=10, max=1000, mean=500, std_dev=100, total_count=50, dist_type=DistributionType.Normal, rng=rng2)
         assert list(result1) == list(result2)

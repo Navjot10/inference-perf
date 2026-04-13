@@ -15,6 +15,8 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import cast
 
+from inference_perf.config import DistributionType
+
 
 def generate_distribution(
     min: int,
@@ -22,7 +24,7 @@ def generate_distribution(
     mean: float,
     std_dev: float,
     total_count: int,
-    dist_type: str = "normal",
+    dist_type: DistributionType = DistributionType.Normal,
     rng: np.random.Generator | None = None,
 ) -> NDArray[np.int_]:
     """
@@ -34,7 +36,7 @@ def generate_distribution(
         mean: The target mean of the distribution.
         std_dev: The target standard deviation of the distribution.
         total_count: The total number of lengths to generate.
-        dist_type: Distribution type — "normal", "lognormal", "uniform", or "fixed".
+        dist_type: Distribution type.
         rng: Optional numpy Generator for deterministic output. Falls back to
             legacy ``np.random`` when *None* (preserves existing call-sites).
 
@@ -42,7 +44,8 @@ def generate_distribution(
         A numpy array of integers representing lengths for input prompts or output generations.
 
     Raises:
-        ValueError: If constraints are impossible (e.g., min_val > max_val).
+        ValueError: If constraints are impossible (e.g., min_val > max_val)
+            or an unsupported distribution type is given.
     """
     if min > max:
         raise ValueError("Minimum value cannot be greater than maximum value.")
@@ -51,15 +54,15 @@ def generate_distribution(
     if std_dev < 0:
         raise ValueError("Standard deviation cannot be negative.")
 
-    if dist_type == "fixed":
+    if dist_type == DistributionType.Fixed:
         return cast(NDArray[np.int_], np.full(total_count, int(mean), dtype=int))
 
-    if dist_type == "uniform":
+    if dist_type == DistributionType.Uniform:
         if rng is not None:
             generated_numbers = rng.uniform(low=min, high=max, size=total_count)
         else:
             generated_numbers = np.random.uniform(low=min, high=max, size=total_count)
-    elif dist_type == "lognormal":
+    elif dist_type == DistributionType.Lognormal:
         # Parameterise the underlying normal so the *lognormal* has the
         # requested mean/std_dev, then shift so that ``min`` maps to 0.
         shifted_mean = mean - min
@@ -72,13 +75,15 @@ def generate_distribution(
             generated_numbers = rng.lognormal(mean=mu, sigma=sigma, size=total_count) + min
         else:
             generated_numbers = np.random.lognormal(mean=mu, sigma=sigma, size=total_count) + min
-    else:  # normal (default)
+    elif dist_type == DistributionType.Normal:
         if mean < min or mean > max:
             raise ValueError("Mean cannot be outside min and max range.")
         if rng is not None:
             generated_numbers = rng.normal(loc=mean, scale=std_dev, size=total_count)
         else:
             generated_numbers = np.random.normal(loc=mean, scale=std_dev, size=total_count)
+    else:
+        raise ValueError(f"Unsupported distribution type: {dist_type}")
 
     clipped_numbers = np.clip(generated_numbers, min, max)
     generated_lengths = np.round(clipped_numbers).astype(int)

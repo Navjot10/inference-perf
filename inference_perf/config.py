@@ -90,6 +90,13 @@ class DataGenType(Enum):
     ConversationReplay = "conversation_replay"
 
 
+class DistributionType(Enum):
+    Normal = "normal"
+    Lognormal = "lognormal"
+    Uniform = "uniform"
+    Fixed = "fixed"
+
+
 # Represents the distribution for input prompts and output generations.
 class Distribution(BaseModel):
     min: int = 10
@@ -126,7 +133,7 @@ class SharedPrefix(BaseModel):
 class ConversationReplayDistribution(BaseModel):
     """Distribution config for conversation replay parameters."""
 
-    type: str = "normal"  # normal, lognormal, uniform, fixed
+    type: DistributionType = DistributionType.Normal
     min: int = 10
     max: int = 1024
     mean: float = 512
